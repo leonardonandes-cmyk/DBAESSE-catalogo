@@ -214,12 +214,18 @@ const CATEGORIAS = [
 
 /* Cor escrita na planilha -> bolinha no site */
 const CORES = {
-  "preto":"#2b2b2b","caramelo":"#b98b6a","chocolate":"#5b3d2b","palha":"#e0cfae",
-  "nude":"#d9b9a3","off-white":"#efe9dd","offwhite":"#efe9dd","branco":"#f7f5f0",
-  "bege":"#ddcdb6","marrom":"#7a5c46","cafe":"#4b3629","vinho":"#6d2635",
-  "verde":"#4a5d47","verde-oliva":"#6b6b3f","azul":"#3a4a5e","dourado":"#c9a86a",
-  "prata":"#c8c8c8","cinza":"#9a9a9a","rosa":"#d9a7a7","vermelho":"#8f2f2f",
-  "amarelo":"#d8b95c","laranja":"#c97a3c","onca":"#a67c52","animal-print":"#a67c52"
+  "preto":"#2b2b2b","branco":"#f7f5f0","off-white":"#efe9dd","offwhite":"#efe9dd",
+  "creme":"#f0e6d2","marfim":"#f2ece0","areia":"#e2d3ba","bege":"#ddcdb6",
+  "nude":"#d9b9a3","palha":"#e0cfae","caramelo":"#b98b6a","chocolate":"#5b3d2b",
+  "marrom":"#7a5c46","cafe":"#4b3629","tabaco":"#8a5a34","whisky":"#a9713f",
+  "terracota":"#b4674a","telha":"#b45c3e","coral":"#e2735e","salmao":"#e79b86",
+  "rosa":"#d9a7a7","pink":"#d94f83","vermelho":"#8f2f2f","vinho":"#6d2635","bordo":"#5c1f2b",
+  "lilas":"#b9a5cf","roxo":"#5f4677","azul":"#3a4a5e","marinho":"#152532",
+  "azul-marinho":"#152532","jeans":"#5b7898","turquesa":"#3fa8a0",
+  "verde":"#4a5d47","verde-oliva":"#6b6b3f","verde-militar":"#4b5320","verde-agua":"#93c4b4",
+  "amarelo":"#d8b95c","mostarda":"#c9962f","laranja":"#c97a3c",
+  "dourado":"#c9a86a","prata":"#c8c8c8","cinza":"#9a9a9a","grafite":"#4a4a4a",
+  "onca":"#a67c52","animal-print":"#a67c52","transparente":"#e8e8e8"
 };
 
 /* ============================================================ */
@@ -247,15 +253,29 @@ function parseCSV(text){
   return rows.filter(r=>r.some(v=>(v||"").trim()!==""));
 }
 
+function mistura(hex,f,alvo){
+  const n=parseInt(hex.slice(1),16);
+  let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+  r=Math.round(r+(alvo-r)*f); g=Math.round(g+(alvo-g)*f); b=Math.round(b+(alvo-b)*f);
+  return "#"+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
+}
 function corHex(nome){
   const k=slug(nome);
   if(CORES[k]) return CORES[k];
-  for(const key in CORES) if(k.includes(key)) return CORES[key];
-  return "#c4bcae";
+  const claro =/(^|-)(bb|bebe|baby|claro|clara|pastel)(-|$)/.test(k);
+  const escuro=/(^|-)(escuro|escura)(-|$)/.test(k);
+  const base=k.replace(/(^|-)(bb|bebe|baby|claro|clara|pastel|escuro|escura)(-|$)/g,"-")
+              .replace(/^-+|-+$/g,"");
+  let hex=CORES[base];
+  if(!hex) for(const key in CORES) if(base.includes(key)||k.includes(key)){hex=CORES[key];break;}
+  if(!hex) hex="#c4bcae";
+  if(claro)  hex=mistura(hex,.58,255);
+  if(escuro) hex=mistura(hex,.35,0);
+  return hex;
 }
 
 const REPOS=[REPO_FOTOS,REPO_SITE];
-const EXTS=[".jpeg",".jpg",".JPEG",".JPG",".png",".webp"];
+const EXTS=[".jpeg",".jpg",".jfif",".JPEG",".JPG",".JFIF",".png",".PNG",".webp"];
 function fotoUrls(row, idx){
   const ref=(row[idx.ref]||"").trim();
   if(!ref) return [];
