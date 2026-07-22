@@ -163,6 +163,7 @@ const PLANILHA_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTdb6qFDgm
 const WHATSAPP     = "5537984166608";
 const INSTAGRAM    = "https://instagram.com/calcadosdbaesse";
 const REPO_FOTOS   = "https://raw.githubusercontent.com/leonardonandes-cmyk/Imagens-Cat-logo-/main/";
+const REPO_SITE    = "https://raw.githubusercontent.com/leonardonandes-cmyk/DBAESSE-catalogo/main/";
 const EXTENSAO     = ".jpeg";
 
 /* Ordem das categorias no site + a frase de cada uma */
@@ -216,12 +217,27 @@ function corHex(nome){
   return "#c4bcae";
 }
 
-function fotoUrl(row, idx){
-  const link = (row[idx.link]||"").trim();
-  const ref  = (row[idx.ref]||"").trim();
-  if(!ref) return "";
-  if(link && link.indexOf("http")===0 && !link.endsWith("/"+EXTENSAO) && !link.endsWith("//")) return link;
-  return REPO_FOTOS + ref + EXTENSAO;
+const REPOS=[REPO_FOTOS,REPO_SITE];
+const EXTS=[".jpeg",".jpg",".JPEG",".JPG",".png",".webp"];
+function fotoUrls(row, idx){
+  const ref=(row[idx.ref]||"").trim();
+  if(!ref) return [];
+  const enc=encodeURI(ref);
+  const out=[];
+  REPOS.forEach(r=>EXTS.forEach(e=>out.push(r+enc+e)));
+  return out;
+}
+function proximaFoto(img){
+  try{
+    const lista=JSON.parse(decodeURIComponent(img.dataset.lista||"[]"));
+    let i=parseInt(img.dataset.i||"0",10)+1;
+    if(i<lista.length){ img.dataset.i=String(i); img.src=lista[i]; }
+    else { img.onerror=null; img.removeAttribute("alt"); img.style.opacity=".25"; }
+  }catch(e){ img.onerror=null; }
+}
+function trocaFoto(img,listaEnc){
+  img.dataset.lista=listaEnc; img.dataset.i="0";
+  try{ img.src=JSON.parse(decodeURIComponent(listaEnc))[0]; }catch(e){}
 }
 
 function precoFmt(v){
@@ -237,13 +253,13 @@ function cardHTML(p){
   const cores = p.cores;
   const first = cores[0];
   const dots = cores.map((c,i)=>
-    `<span class="dot${i===0?" on":""}" data-src="${c.foto}" data-cor="${c.cor}" style="background:${corHex(c.cor)}" title="${c.cor}"></span>`
+    `<span class="dot${i===0?" on":""}" data-lista="${c.lista}" data-cor="${c.cor}" style="background:${corHex(c.cor)}" title="${c.cor}"></span>`
   ).join("");
   const tag = p.tag ? `<span class="tag${p.oferta?" tag-oferta":""}">${p.tag}</span>` : (p.oferta?`<span class="tag tag-oferta">Oferta</span>`:"");
   const msg = encodeURIComponent("Olá! Tenho interesse no modelo "+p.nome+" da DBAESSE.");
   return `<div class="card" data-nome="${p.nome}">
     <a class="frame" href="https://wa.me/${WHATSAPP}?text=${msg}" target="_blank" rel="noopener">
-      <img src="${first.foto}" alt="${p.nome}" loading="lazy">
+      <img src="${first.fotos[0]}" data-lista="${first.lista}" data-i="0" onerror="proximaFoto(this)" alt="${p.nome}" loading="lazy">
       ${tag}
       <span class="buy">Comprar</span>
     </a>
@@ -294,7 +310,7 @@ function ativar(){
       d.addEventListener("click",e=>{
         e.preventDefault(); e.stopPropagation();
         img.style.opacity=0;
-        setTimeout(()=>{img.src=d.dataset.src;img.style.opacity=1;},140);
+        setTimeout(()=>{img.onerror=function(){proximaFoto(this)};trocaFoto(img,d.dataset.lista);img.style.opacity=1;},140);
         card.querySelectorAll(".dot").forEach(x=>x.classList.remove("on"));
         d.classList.add("on");
         if(corNome) corNome.textContent=d.dataset.cor;
@@ -355,8 +371,9 @@ async function montar(){
     if(!p.preco) p.preco=precoFmt(r[idx.preco]);
     if(!p.tag && cap(r[idx.tag])) p.tag=cap(r[idx.tag]);
     if(slug(r[idx.of])==="sim") p.oferta=true;
-    const foto=fotoUrl(r,idx);
-    if(foto) p.cores.push({cor:cap(r[idx.cor])||"Único",foto:foto});
+    const fotos=fotoUrls(r,idx);
+    if(fotos.length) p.cores.push({cor:cap(r[idx.cor])||"Único",fotos:fotos,
+                                   lista:encodeURIComponent(JSON.stringify(fotos))});
   }
 
   const produtos=ordem.map(k=>mapa[k]).filter(p=>p.cores.length);
