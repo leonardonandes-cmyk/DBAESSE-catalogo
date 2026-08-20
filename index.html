@@ -260,6 +260,7 @@
    CONFIGURAÇÃO — os únicos valores que talvez você precise mexer
    ============================================================ */
 const PLANILHA_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTdb6qFDgmJRe_Rgqcm4K9a6OmXZ97sajYApbnYJyMWbrB3IjnkHkLtE1GLedOQkEFoaOuTqWfKNEgH/pub?gid=1734594426&single=true&output=csv";
+const MENU_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTdb6qFDgmJRe_Rgqcm4K9a6OmXZ97sajYApbnYJyMWbrB3IjnkHkLtE1GLedOQkEFoaOuTqWfKNEgH/pub?gid=2081759553&single=true&output=csv";
 const WHATSAPP     = "5537984166608";
 const WHATSAPP_VENDAS = "5537991955925";   // Sabrina — atende os pedidos dos produtos
 const INSTAGRAM    = "https://instagram.com/calcadosdbaesse";
@@ -268,14 +269,19 @@ const REPO_FOTOS   = "https://raw.githubusercontent.com/leonardonandes-cmyk/Imag
 const REPO_SITE    = "https://raw.githubusercontent.com/leonardonandes-cmyk/DBAESSE-catalogo/main/";
 const EXTENSAO     = ".jpeg";
 
-/* Ordem das categorias no site + a frase de cada uma */
-const CATEGORIAS = [
-  ["Papete",      "O conforto que virou desejo — tiras marcantes pra usar do dia à noite."],
-  ["Salto Bloco", "Altura com firmeza — o salto que sustenta o dia inteiro sem abrir mão da elegância."],
-  ["Rasteira",    "Leveza pra todo dia — a base do verão, do trabalho ao fim de semana."],
-  ["Sapatilha",   "Clássica e atual — o toque delicado que combina com tudo."],
-  ["Mocassim",    "Sofisticação sem esforço — a peça que eleva qualquer look."]
-];
+/* Frase de cada categoria (o texto premium fica AQUI; a ORDEM vem da aba Menu da planilha).
+   Categoria nova sem frase cadastrada aparece sem frase — é só me pedir a frase depois. */
+const FRASES_CAT = {
+  "papete":      "O conforto que virou desejo — tiras marcantes pra usar do dia à noite.",
+  "salto-bloco": "Altura com firmeza — o salto que sustenta o dia inteiro sem abrir mão da elegância.",
+  "rasteira":    "Leveza pra todo dia — a base do verão, do trabalho ao fim de semana.",
+  "sapatilha":   "Clássica e atual — o toque delicado que combina com tudo.",
+  "mocassim":    "Sofisticação sem esforço — a peça que eleva qualquer look."
+};
+/* Ordem-padrão de SEGURANÇA (usada só se a aba Menu não carregar). */
+const ORDEM_PADRAO = ["Lançamentos","Papete","Salto Bloco","Rasteira","Sapatilha","Mocassim"];
+/* Preenchida em tempo real a partir da aba Menu (coluna A). */
+let ORDEM_MENU = ORDEM_PADRAO.slice();
 
 /* Cor escrita na planilha -> bolinha no site */
 const CORES = {
@@ -550,6 +556,16 @@ async function montar(){
   const rows=parseCSV(txt);
   if(rows.length<2){ $("#status").textContent="A planilha ainda não tem produtos."; return; }
 
+  // Ordem do menu vem da aba "Menu" (coluna A, uma categoria por linha). Se falhar, mantém ORDEM_PADRAO.
+  try{
+    const rm=await fetch(MENU_CSV+"&t="+Date.now());
+    const tm=await rm.text();
+    const linhas=parseCSV(tm).map(l=>(l[0]||"").trim()).filter(x=>x);
+    // ignora um possível cabeçalho tipo "Menu"/"Categoria"/"Ordem" na 1ª linha
+    if(linhas.length && ["menu","categoria","categorias","ordem"].includes(slug(linhas[0]))) linhas.shift();
+    if(linhas.length) ORDEM_MENU=linhas;
+  }catch(e){ /* mantém ORDEM_PADRAO */ }
+
   const head=rows[0].map(h=>slug(h));
   const idx={
     cat:  head.findIndex(h=>h.startsWith("categoria")),
@@ -676,14 +692,20 @@ async function montar(){
       .filter(p=>slug(p.cat)===id)
       .map(p=>montaCard(p, p.cores.filter(c=>!c.oferta), false))  // só cores de preço cheio
       .filter(c=>c.cores.length);
+    if(!lista.length) return;                 // categoria sem produto não entra no menu
     menu+=`<a href="#${id}">${nomeCat}</a>`;
     html+=secaoHTML(id,"Linha",nomeCat,frase||"",lista);
   }
 
-  CATEGORIAS.forEach(([nomeCat,frase])=>secaoCat(nomeCat,frase));
-  produtos.forEach(p=>{                       // categorias fora da lista fixa
+  // 1) na ordem definida pela aba Menu (frase vem do dicionário FRASES_CAT)
+  ORDEM_MENU.forEach(nomeCat=>{
+    if(ehOfertaCat(slug(nomeCat))) return;    // SALE tem seção própria
+    secaoCat(nomeCat, FRASES_CAT[slug(nomeCat)]||"");
+  });
+  // 2) categorias que têm produto mas não estão na aba Menu — entram no fim, sem sumir
+  produtos.forEach(p=>{
     if(!p.cat || ehOfertaCat(slug(p.cat))) return;
-    secaoCat(p.cat,"");
+    secaoCat(p.cat, FRASES_CAT[slug(p.cat)]||"");
   });
 
   // SALE — o mesmo modelo entra aqui só com as cores em promoção.
