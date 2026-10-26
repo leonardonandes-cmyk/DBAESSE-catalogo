@@ -558,7 +558,8 @@ async function baixarTodas(){
     const b=await buscaFoto(c.fotos);
     if(b) arquivos.push(new File([b], hifen(p.nome+"-"+c.cor)+".jpg", {type:b.type||"image/jpeg"}));
   }
-  const extras=await carregaDivulg(p);
+  // No SALE só as cores em promoção: sem as fotos de divulgação (mostram as outras cores)
+  const extras=p.oferta ? [] : await carregaDivulg(p);
   for(let k=0;k<extras.length;k++){
     const b=await buscaFoto([extras[k]]);
     if(b) arquivos.push(new File([b], hifen(p.nome)+"-foto-"+(k+1)+".jpg", {type:b.type||"image/jpeg"}));
@@ -737,7 +738,8 @@ function abrirFicha(id,k){
   mostraCor(ini,false);
   if(ini) requestAnimationFrame(()=>{ const tr=$("#fTrilho"); tr.scrollLeft=ini*tr.clientWidth; galConta(); });
   const gid=++GAL_ID;
-  carregaDivulg(p,u=>{ if(gid===GAL_ID && FAT===p) galAdd(u); });
+  // No SALE a galeria mostra SÓ as cores em promoção (as fotos de divulgação trazem as outras cores)
+  if(!p.oferta) carregaDivulg(p,u=>{ if(gid===GAL_ID && FAT===p) galAdd(u); });
 }
 function fecharFicha(){
   $("#fundo").classList.remove("on"); $("#ficha").classList.remove("on"); document.body.classList.remove("travado");
