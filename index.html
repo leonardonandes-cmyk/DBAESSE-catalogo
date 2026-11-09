@@ -134,7 +134,8 @@
   .ofertas .rule::after{background:#c1272d}
   .tag-oferta{color:#fff!important;background:#c1272d!important}
   .tag-oferta.black{background:#141210!important}
-  .selo-bf{position:absolute;top:0;left:0;right:0;z-index:3;background:rgba(250,247,242,.94);padding:6px 9%;pointer-events:none}
+  .selo-bf{position:absolute;top:0;left:0;right:0;z-index:3;background:rgba(250,247,242,.94);padding:5px 7%;pointer-events:none}
+  .frame:has(.selo-bf) .dl{top:auto;bottom:10px}
   .frame .selo-bf img{width:100%;height:auto;object-fit:contain;display:block;transform:none!important}
   .price.sale{color:#c1272d;font-weight:700}
   .price-de{color:#a99f8e;text-decoration:line-through;font-weight:400;font-size:.82em;margin-right:8px}
@@ -543,7 +544,7 @@ function cardHTML(p){
   const dots = cores.map((c,i)=>
     `<span class="dot${i===0?" on":""}" data-k="${i}" data-lista="${c.lista}" data-cor="${c.cor}" style="background:${corHex(c.cor)}" title="${c.cor}"></span>`
   ).join("");
-  const tag = p.tag ? `<span class="tag${p.oferta?" tag-oferta":""}">${p.tag}</span>` : (p.oferta?(PROMO_BLACK?`<div class="selo-bf"><img src="selo-black-yellow.png" alt="Black Friday" decoding="async"></div>`:`<span class="tag tag-oferta">SALE</span>`):"");
+  const tag = p.tag ? `<span class="tag${p.oferta?" tag-oferta":""}">${p.tag}</span>` : (p.oferta?(PROMO_BLACK?`<div class="selo-bf"><img src="selo-black-yellow.png?v=2" alt="Black Friday" decoding="async"></div>`:`<span class="tag tag-oferta">SALE</span>`):"");
   return `<div class="card" data-id="${pid}" data-k="0" data-nome="${p.nome}">
     <div class="frame">
       <img src="${first.fotos[0]}" data-lista="${first.lista}" data-i="0" onerror="proximaFoto(this)" alt="${p.nome}" loading="lazy" decoding="async">
