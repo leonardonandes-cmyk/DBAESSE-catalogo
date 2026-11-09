@@ -11,19 +11,19 @@
 <meta property="og:title" content="DBAESSE · Catálogo de Calçados Femininos">
 <meta property="og:description" content="Papetes, salto bloco, rasteiras, sapatilhas e mocassins. Conheça a coleção.">
 <meta property="og:url" content="https://dbaesse-catalogo.vercel.app/">
-<meta property="og:image" content="https://raw.githubusercontent.com/leonardonandes-cmyk/Imagens-Cat-logo-/main/capa-catalogo.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/leonardonandes-cmyk/DBAESSE-catalogo/main/capa-blackfriday.jpg?v=1">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="pt_BR">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="DBAESSE · Catálogo de Calçados Femininos">
 <meta name="twitter:description" content="Papetes, salto bloco, rasteiras, sapatilhas e mocassins. Conheça a coleção.">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/leonardonandes-cmyk/Imagens-Cat-logo-/main/capa-catalogo.jpg">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/leonardonandes-cmyk/DBAESSE-catalogo/main/capa-blackfriday.jpg?v=1">
 <meta name="theme-color" content="#ffffff">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
-<link rel="preload" as="image" fetchpriority="high" href="https://raw.githubusercontent.com/leonardonandes-cmyk/DBAESSE-catalogo/main/banner-home.jpeg">
+<link rel="preload" as="image" fetchpriority="high" href="https://raw.githubusercontent.com/leonardonandes-cmyk/DBAESSE-catalogo/main/banner-blackfriday.jpg">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=DM+Serif+Display&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{--bg:#ffffff;--ink:#141210;--soft:#4e4841;--line:#e2dbcf;--champagne:#b8955a;--studio:#e9e3d9;--card:#fff;--mut:#a99f8e;--gold:#b8955a;--dark:#1c1a17}
@@ -46,6 +46,11 @@
   .hero{position:relative;height:82vh;max-height:760px;min-height:480px;overflow:hidden;display:flex;align-items:center;justify-content:center}
   .hero-pic{position:absolute;inset:0}
   .hero-pic img{width:100%;height:100%;object-fit:cover;object-position:center 16%;animation:kb 22s ease-in-out infinite alternate}
+  /* MODO PÔSTER: arte promocional inteira (sem corte, sem texto por cima) */
+  .hero.poster{height:auto;max-height:none;min-height:0;background:#f8f8fa;cursor:pointer}
+  .hero.poster::after,.hero.poster .hero-inner{display:none}
+  .hero.poster .hero-pic{position:relative;inset:auto;display:flex;justify-content:center}
+  .hero.poster .hero-pic img{width:auto;max-width:100%;height:auto;max-height:86vh;object-fit:contain;animation:none;display:block}
   @keyframes kb{from{transform:scale(1)}to{transform:scale(1.08)}}
   .hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(28,26,23,.14),rgba(28,26,23,.4))}
   .hero-inner{position:relative;z-index:2;text-align:center;color:#fff;padding:0 24px}
@@ -261,6 +266,7 @@
     .collection{padding-top:44px}
     .hero{height:88vh;min-height:540px;max-height:none}
     .hero-pic img{object-position:center 28%}
+    .hero.poster .hero-pic img{max-height:none;width:100%}
   }
   @media (prefers-reduced-motion:reduce){
     *{transition:none!important;animation:none!important}
@@ -472,6 +478,8 @@ function urlsRef(ref){
 function fotoUrls(row, idx){
   return urlsRef((row[idx.ref]||"").trim());
 }
+// BANNER PROMOCIONAL: nome da arte no repo (sem extensão). Deixe "" para voltar ao banner normal.
+const BANNER_PROMO="banner-blackfriday";
 function setHero(ref){
   const lista=urlsRef(ref||"banner-home");
   if(!lista.length) return;
@@ -957,7 +965,7 @@ async function montar(){
   const produtos=ordem.map(k=>mapa[k]).filter(p=>p.cores.length);
   if(!produtos.length){ $("#status").textContent="A planilha ainda não tem produtos com foto."; return; }
 
-  if(bannerRef){ setHero(bannerRef); }
+  if(bannerRef && !BANNER_PROMO){ setHero(bannerRef); }
 
   let htmlCamp="", menuCamp="";
   if(campanhas.length){
@@ -1050,7 +1058,11 @@ $("#linkRev").href="https://wa.me/"+WHATSAPP+"?text="+encodeURIComponent("Olá! 
 $("#linkRev").target="_blank"; $("#linkRev").rel="noopener";
 $("#linkIg").href=INSTAGRAM; $("#linkIg").target="_blank"; $("#linkIg").rel="noopener";
 $("#linkCluff").href=CLUFF; $("#linkCluff").target="_blank"; $("#linkCluff").rel="noopener";
-setHero("banner-home");
+if(BANNER_PROMO){
+  const hero=$("#top"); hero.classList.add("poster");
+  hero.onclick=()=>{ const o=document.getElementById("ofertas"); if(o) o.scrollIntoView({behavior:"smooth"}); };
+  setHero(BANNER_PROMO);
+} else setHero("banner-home");
 montar();
 </script>
 </body>
