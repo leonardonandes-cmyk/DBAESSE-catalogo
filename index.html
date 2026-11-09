@@ -42,6 +42,8 @@
   nav a.menu-sale{color:#fff;background:#c1272d;padding:5px 12px;border-radius:3px;font-weight:600;letter-spacing:.14em;box-shadow:0 2px 8px rgba(193,39,45,.32)}
   nav a.menu-sale:hover{background:#a01f24;color:#fff}
   nav a.menu-sale::after{display:none}
+  nav a.menu-sale.black{background:#141210;box-shadow:0 2px 8px rgba(20,18,16,.3)}
+  nav a.menu-sale.black:hover{background:#000}
 
   .hero{position:relative;height:82vh;max-height:760px;min-height:480px;overflow:hidden;display:flex;align-items:center;justify-content:center}
   .hero-pic{position:absolute;inset:0}
@@ -131,6 +133,7 @@
   .ofertas .col-desc{color:#c1272d;font-weight:500}
   .ofertas .rule::after{background:#c1272d}
   .tag-oferta{color:#fff!important;background:#c1272d!important}
+  .tag-oferta.black{background:#141210!important}
   .price.sale{color:#c1272d;font-weight:700}
   .price-de{color:#a99f8e;text-decoration:line-through;font-weight:400;font-size:.82em;margin-right:8px}
 
@@ -159,6 +162,11 @@
     .grupo a{font-size:10.5px;letter-spacing:.1em;padding:14px 20px;text-align:center}
   }
 
+  /* ---- Faixa BLACK FRIDAY (quando a aba Menu tem "Black Friday") ---- */
+  .zsale.black{background:#141210}
+  .zsale.black .zsale-word{font-size:clamp(40px,10.5vw,118px);letter-spacing:.06em}
+  .ofertas.black .col-eyebrow,.ofertas.black .col-desc{color:#141210}
+  .ofertas.black .rule::after{background:#141210}
   /* ---- Faixa SALE: "SALE" grande e legível, vermelho vivo ---- */
   .zsale{display:block;position:relative;overflow:hidden;background:#c1272d;height:clamp(120px,17vw,168px);margin:0}
   .zsale-word{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
@@ -399,6 +407,7 @@ const FRASES_CAT = {
   "mocassim":    "Sofisticação sem esforço — a peça que eleva qualquer look."
 };
 /* Ordem-padrão de SEGURANÇA (usada só se a aba Menu não carregar). */
+let PROMO_BLACK=false;   // liga sozinho quando a aba Menu tem "Black Friday"
 const ORDEM_PADRAO = ["Lançamentos","Papete","Salto Bloco","Rasteira","Sapatilha","Mocassim"];
 /* Preenchida em tempo real a partir da aba Menu (coluna A). */
 let ORDEM_MENU = ORDEM_PADRAO.slice();
@@ -532,7 +541,7 @@ function cardHTML(p){
   const dots = cores.map((c,i)=>
     `<span class="dot${i===0?" on":""}" data-k="${i}" data-lista="${c.lista}" data-cor="${c.cor}" style="background:${corHex(c.cor)}" title="${c.cor}"></span>`
   ).join("");
-  const tag = p.tag ? `<span class="tag${p.oferta?" tag-oferta":""}">${p.tag}</span>` : (p.oferta?`<span class="tag tag-oferta">SALE</span>`:"");
+  const tag = p.tag ? `<span class="tag${p.oferta?" tag-oferta":""}">${p.tag}</span>` : (p.oferta?`<span class="tag tag-oferta${PROMO_BLACK?" black":""}">${PROMO_BLACK?"BLACK":"SALE"}</span>`:"");
   return `<div class="card" data-id="${pid}" data-k="0" data-nome="${p.nome}">
     <div class="frame">
       <img src="${first.fotos[0]}" data-lista="${first.lista}" data-i="0" onerror="proximaFoto(this)" alt="${p.nome}" loading="lazy" decoding="async">
@@ -559,8 +568,8 @@ function secaoHTML(id, eyebrow, titulo, desc, produtos, extraClass){
       <div class="rule"></div>
     </div>
     ${cards}`;
-  if(extraClass==="ofertas")
-    return `<section class="collection ofertas" id="${id}"><div class="ofertas-in">${inner}</div></section>`;
+  if(extraClass==="ofertas"||extraClass==="ofertas black")
+    return `<section class="collection ${extraClass}" id="${id}"><div class="ofertas-in">${inner}</div></section>`;
   return `<section class="collection" id="${id}">${inner}</section>`;
 }
 
@@ -908,7 +917,7 @@ async function montar(){
   let bannerRef="";
   let teaserTxt="";
 
-  const ehOfertaCat = s => (s==="oferta"||s==="ofertas"||s==="sale");
+  const ehOfertaCat = s => (s==="oferta"||s==="ofertas"||s==="sale"||s==="black-friday"||s==="blackfriday");
 
   for(let i=1;i<rows.length;i++){
     const r=rows[i];
@@ -1005,6 +1014,30 @@ async function montar(){
     return {nome:p.nome, cat:p.cat, preco:precoCtx, de:deCtx, tag:isSale?"":p.tag, oferta:isSale, cores:cores};
   }
 
+  // SALE / BLACK FRIDAY — o mesmo modelo entra aqui só com as cores em promoção.
+  const sale=[];
+  produtos.forEach(p=>{
+    const cs=p.cores.filter(c=>c.oferta);
+    if(cs.length) sale.push(montaCard(p, cs, true));
+  });
+  // Se a aba Menu tiver "Black Friday" (ou "Sale"), a seção de promoção entra NAQUELA posição
+  // (ex.: 1ª linha = no lugar dos Lançamentos). Sem isso, segue como antes: SALE no fim.
+  const rotuloPromo=ORDEM_MENU.find(n=>ehOfertaCat(slug(n)))||"";
+  const ehBlack=slug(rotuloPromo).includes("black");
+  PROMO_BLACK=ehBlack;
+  const nomePromo=ehBlack?"BLACK FRIDAY":"SALE";
+  let promoFeita=false, menuSale="";
+  function secaoPromo(){
+    if(promoFeita || !sale.length) return;
+    promoFeita=true;
+    const cls=ehBlack?" black":"";
+    menuSale=`<a class="menu-sale${cls}" href="#ofertas">${nomePromo}</a>`;
+    html+=`<a class="zsale${cls}" href="#ofertas" aria-label="Ver ofertas"><div class="zsale-word">${nomePromo}</div></a>`
+      +secaoHTML("ofertas", teaserTxt||(ehBlack?"Black Friday · por tempo limitado":"Seleção · por tempo limitado"),"",
+        ehBlack?"Ofertas especiais por tempo limitado, enquanto durarem os estoques.":"Peças selecionadas com condição especial — enquanto durar o estoque.",
+        sale, "ofertas"+cls);
+  }
+
   let html="", menu="";
   const usadas=new Set();
 
@@ -1023,7 +1056,7 @@ async function montar(){
 
   // 1) na ordem definida pela aba Menu (frase vem do dicionário FRASES_CAT)
   ORDEM_MENU.forEach(nomeCat=>{
-    if(ehOfertaCat(slug(nomeCat))) return;    // SALE tem seção própria
+    if(ehOfertaCat(slug(nomeCat))){ secaoPromo(); return; }   // promoção entra nesta posição
     secaoCat(nomeCat, FRASES_CAT[slug(nomeCat)]||"");
   });
   // 2) categorias que têm produto mas não estão na aba Menu — entram no fim, sem sumir
@@ -1032,22 +1065,8 @@ async function montar(){
     secaoCat(p.cat, FRASES_CAT[slug(p.cat)]||"");
   });
 
-  // SALE — o mesmo modelo entra aqui só com as cores em promoção.
-  const sale=[];
-  produtos.forEach(p=>{
-    const cs=p.cores.filter(c=>c.oferta);
-    if(cs.length) sale.push(montaCard(p, cs, true));
-  });
-
-  // Faixa SALE estilo Zara (só aparece se houver promoção): "SALE" gigante na diagonal, cortado pela faixa.
-  let htmlFaixa="";
-  if(sale.length){
-    htmlFaixa=`<a class="zsale" href="#ofertas" aria-label="Ver ofertas"><div class="zsale-word">SALE</div></a>`;
-  }
-
-  const menuSale = sale.length ? `<a class="menu-sale" href="#ofertas">SALE</a>` : "";
-  html+=htmlFaixa+secaoHTML("ofertas","Seleção · por tempo limitado","",
-    "Peças selecionadas com condição especial — enquanto durar o estoque.",sale,"ofertas");
+  // sem posição na aba Menu: promoção vai pro fim (comportamento antigo)
+  if(!promoFeita) secaoPromo();
 
   $("#menu").innerHTML=menuSale+menuCamp+menu;
   $("#conteudo").innerHTML=htmlCamp+html;
