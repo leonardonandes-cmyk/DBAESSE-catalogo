@@ -916,6 +916,7 @@ async function montar(){
   const campanhas=[];
   let bannerRef="";
   let teaserTxt="";
+  let temBlack=false;   // alguma linha com Oferta = "Black"
 
   const ehOfertaCat = s => (s==="oferta"||s==="ofertas"||s==="sale"||s==="black-friday"||s==="blackfriday");
 
@@ -960,12 +961,13 @@ async function montar(){
     const deLinha=(idx.de>=0)?precoFmt(r[idx.de]):"";
 
     const fotos=fotoUrls(r,idx);
+    if(slug(r[idx.of]).startsWith("black") && fotos.length) temBlack=true;
     if(fotos.length) p.cores.push({
       cor:cap(r[idx.cor])||"Único",
       ref:ref,
       fotos:fotos,
       lista:encodeURIComponent(JSON.stringify(fotos)),
-      oferta: catEhOferta || slug(r[idx.of])==="sim",
+      oferta: catEhOferta || slug(r[idx.of])==="sim" || slug(r[idx.of]).startsWith("black"),
       preco: precoLinha,
       de: deLinha
     });
@@ -1023,7 +1025,8 @@ async function montar(){
   // Se a aba Menu tiver "Black Friday" (ou "Sale"), a seção de promoção entra NAQUELA posição
   // (ex.: 1ª linha = no lugar dos Lançamentos). Sem isso, segue como antes: SALE no fim.
   // Com a arte da Black no topo (BANNER_PROMO), o SALE vira BLACK FRIDAY e sobe pro lugar dos Lançamentos sozinho.
-  const promoNoTopo=/black/i.test(BANNER_PROMO);
+  // Também liga sozinho se a planilha tiver Oferta = "Black" em alguma cor.
+  const promoNoTopo=/black/i.test(BANNER_PROMO) || temBlack;
   const rotuloPromo=ORDEM_MENU.find(n=>ehOfertaCat(slug(n)))||(promoNoTopo?"Black Friday":"");
   const ehBlack=slug(rotuloPromo).includes("black");
   PROMO_BLACK=ehBlack;
