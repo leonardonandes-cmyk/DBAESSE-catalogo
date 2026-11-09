@@ -544,7 +544,7 @@ function cardHTML(p){
   const dots = cores.map((c,i)=>
     `<span class="dot${i===0?" on":""}" data-k="${i}" data-lista="${c.lista}" data-cor="${c.cor}" style="background:${corHex(c.cor)}" title="${c.cor}"></span>`
   ).join("");
-  const tag = p.tag ? `<span class="tag${p.oferta?" tag-oferta":""}">${p.tag}</span>` : (p.oferta?(PROMO_BLACK?`<div class="selo-bf"><img src="selo-black-yellow.png?v=2" alt="Black Friday" decoding="async"></div>`:`<span class="tag tag-oferta">SALE</span>`):"");
+  const tag = p.tag ? `<span class="tag${p.oferta?" tag-oferta":""}">${p.tag}</span>` : (p.oferta?`<span class="tag tag-oferta${PROMO_BLACK?" black":""}">${PROMO_BLACK?"BLACK":"SALE"}</span>`:"");
   return `<div class="card" data-id="${pid}" data-k="0" data-nome="${p.nome}">
     <div class="frame">
       <img src="${first.fotos[0]}" data-lista="${first.lista}" data-i="0" onerror="proximaFoto(this)" alt="${p.nome}" loading="lazy" decoding="async">
